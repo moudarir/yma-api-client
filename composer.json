@@ -1,0 +1,39 @@
+{
+  "name": "moudarir/yma-api-client",
+  "description": "API Client to communicate with YMA Rest Server.",
+  "keywords": [
+    "php",
+    "YMA",
+    "Rest API",
+    "Library",
+    "Client"
+  ],
+  "type": "library",
+  "license": "MIT",
+  "config": {
+    "platform":{
+      "php": "7.1.8"
+    },
+    "bin-dir": "vendor/bin"
+  },
+  "authors": [
+    {
+      "name": "Abdessamad MOUDARIR",
+      "email": "amoudarir@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": ">=7.1.8",
+    "guzzlehttp/guzzle": "^6.3",
+    "laravie/parser": "^2.0",
+    "ext-bcmath": "*",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Moudarir\\YMAClient\\": "src/"
+    }
+  },
+  "minimum-stability": "dev"
+}
