@@ -13,19 +13,16 @@ class YMAClient {
 
     /**
      * @var string
-     * @example client
      */
     private $username;
 
     /**
      * @var string
-     * @example 12345678
      */
     private $password;
 
     /**
      * @var string
-     * @example k0wk8g8gg0skocw88o8ok888skws0o08skgss8g8
      */
     private $apiKey;
 
