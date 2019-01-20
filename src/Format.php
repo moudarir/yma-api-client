@@ -19,6 +19,13 @@ class Format {
     private $request;
 
     /**
+     * @var string
+     */
+    private $outputFormat;
+
+    private $content;
+
+    /**
      * Format constructor.
      *
      * @param ResponseInterface $request
@@ -32,54 +39,60 @@ class Format {
 
         $this->params   = $params;
         $this->request  = $request;
+
+        $this->setContent();
+        $this->setOutputFormat();
     }
 
     /**
      * formatResponse()
      *
-     * @param boolean $asArray
      * @return mixed|\stdClass|array
      */
-    public function formatResponse ($asArray = false) {
-        $contents   = $this->getContents();
-        $format     = $this->getFormat();
-
-        if ($format === 'json') {
-            $contentsObject = json_decode($contents);
-        } elseif ($format === 'xml') {
-            $parser         = new Reader(new Document());
-            $contentsObject = $parser->extract($contents)->getOriginalContent();
-        } elseif ($format === 'serialized') {
-            $contentsObject = unserialize($contents);
+    public function getResponse () {
+        if ($this->outputFormat === 'json') {
+            $contents = json_decode($this->content);
+        } elseif ($this->outputFormat === 'xml') {
+            $contents = $this->fromXML();
+        } elseif ($this->outputFormat === 'serialized') {
+            $contents = unserialize($this->content);
         } else {
-            $contentsObject = new \stdClass();
-        }
-
-        return $asArray ? json_decode(json_encode($contentsObject), true) : $contentsObject;
-    }
-
-    /**
-     * @return string
-     */
-    private function getContents (): string {
-        $requestBody = $this->request->getBody();
-        if (isset($this->params['stream']) && $this->params['stream'] === true) {
-            $contents = '';
-            while (!$requestBody->eof() ) {
-                $contents .= $requestBody->read(1024);
-            }
-            $requestBody->close();
-        } else {
-            $contents = $requestBody->getContents();
+            $contents = new \stdClass();
         }
 
         return $contents;
     }
 
     /**
+     * @return Format
+     */
+    private function setContent () {
+        $requestBody = $this->request->getBody();
+        if (isset($this->params['stream']) && $this->params['stream'] === true) {
+            $content = '';
+            while (!$requestBody->eof() ) {
+                $content .= $requestBody->read(1024);
+            }
+            $requestBody->close();
+        } else {
+            $content = $requestBody->getContents();
+        }
+
+        $this->content = $content;
+        return $this;
+    }
+
+    /**
      * @return string
      */
-    private function getFormat (): string {
+    public function getContent (): string {
+        return $this->content;
+    }
+
+    /**
+     * @return Format
+     */
+    private function setOutputFormat () {
         $contentTypes   = $this->request->getHeader('Content-Type');
         $contentType    = '';
         $format         = 'json';
@@ -107,7 +120,32 @@ class Format {
             }
         }
 
-        return $format;
+        $this->outputFormat = $format;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOutputFormat (): string {
+        return $this->outputFormat;
+    }
+
+    /**
+     * @return mixed
+     */
+    private function fromXML () {
+        $parser = new Reader(new Document());
+        $result = $parser->extract($this->content)->getOriginalContent();
+
+        return $result;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function toArray () {
+        return json_decode(json_encode($this->content), true);
     }
 
 }

@@ -37,6 +37,11 @@ class YMAClient {
     private $params = [];
 
     /**
+     * @var array
+     */
+    private $options;
+
+    /**
      * YMAClient constructor.
      *
      * @param string $username
@@ -52,6 +57,8 @@ class YMAClient {
         $this->client   = new Client([
             'base_uri' => $environment === 'prod' ? Statics::BASE_URI_PROD : Statics::BASE_URI_DEV
         ]);
+
+        $this->setOptions();
     }
 
     /**
@@ -62,9 +69,8 @@ class YMAClient {
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
     public function request ($method, $uri) {
-        $options = $this->setOptions();
         try {
-            return $this->client->request($method, $uri, $options);
+            return $this->client->request($method, $uri, $this->options);
         } catch (GuzzleException $exception) {
             return null;
         }
@@ -74,14 +80,12 @@ class YMAClient {
      * formatResponse()
      *
      * @param mixed|\Psr\Http\Message\ResponseInterface $request
-     * @param boolean $asArray
-     * @return mixed|\stdClass|array
+     * @return mixed|\stdClass
      */
-    public function getResponse ($request, $asArray = false) {
-        $params = $this->getParams();
+    public function getResponse ($request) {
         try {
-            $format = new Format($request, $params);
-            return $format->formatResponse($asArray);
+            $format = new Format($request, $this->params);
+            return $format->getResponse();
         } catch (\Exception $e) {
             $response = [
                 'error'     => true,
@@ -89,7 +93,7 @@ class YMAClient {
                 'message'   => $e->getMessage()
             ];
 
-            return $asArray ? $response : (object)$response;
+            return (object)$response;
         }
     }
 
@@ -128,13 +132,11 @@ class YMAClient {
     /**
      * setOptions()
      *
-     * @return array
+     * @return YMAClient
      */
-    private function setOptions (): array {
-        $params         = $this->getParams();
-        $format         = $this->getFormat();
+    private function setOptions () {
         $formats        = Statics::FORMATS;
-        $acceptFormat   = isset($formats[$format]) ? $formats[$format] : $formats[Statics::DEFAULT_FORMAT];
+        $acceptFormat   = isset($formats[$this->format]) ? $formats[$this->format] : $formats[Statics::DEFAULT_FORMAT];
         $default        = [
             'auth'      => [$this->username, $this->password],
             'headers'   => [
@@ -142,8 +144,17 @@ class YMAClient {
                 'X-Api-Key' => $this->apiKey
             ]
         ];
-        $options        = !empty($params) ? array_merge($default, $params) : $default;
-        return $options;
+        $this->options  = !empty($this->params) ? array_merge($default, $this->params) : $default;
+        return $this;
+    }
+
+    /**
+     * getOptions()
+     *
+     * @return array
+     */
+    public function getOptions (): array {
+        return $this->options;
     }
 
 }
