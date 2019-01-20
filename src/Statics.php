@@ -5,7 +5,7 @@ class Statics {
 
     const API_VERSION       = '1.1';
     const BASE_URI_DEV      = 'http://api.server.yma';
-    const BASE_URI_PROD     = 'https://api.check-profile.net';
+    const BASE_URI_PROD     = 'https://api.profile-check.net';
     const TIMEZONE          = 'GMT';
     const ALLOWED_METHODS   = ['get', 'delete', 'post', 'put', 'options', 'patch', 'head'];
     const DEFAULT_FORMAT    = 'json';
