@@ -28,11 +28,11 @@ class Format {
     /**
      * Format constructor.
      *
-     * @param ResponseInterface $request
+     * @param ResponseInterface|null $request
      * @param array $params
      * @throws Exception
      */
-    public function __construct (ResponseInterface $request, array $params) {
+    public function __construct ($request, array $params) {
         if (is_null($request)) {
             throw new Exception('No Content.', 204);
         }
@@ -40,7 +40,7 @@ class Format {
         $this->params   = $params;
         $this->request  = $request;
 
-        $this->setContent();
+        $this->setContent($request, $params);
         $this->setOutputFormat($request);
     }
 
@@ -64,11 +64,13 @@ class Format {
     }
 
     /**
+     * @param ResponseInterface $request
+     * @param array $params
      * @return Format
      */
-    private function setContent () {
-        $requestBody = $this->request->getBody();
-        if (isset($this->params['stream']) && $this->params['stream'] === true) {
+    private function setContent ($request, $params) {
+        $requestBody = $request->getBody();
+        if (isset($params['stream']) && $params['stream'] === true) {
             $content = '';
             while (!$requestBody->eof() ) {
                 $content .= $requestBody->read(1024);
