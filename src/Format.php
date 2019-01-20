@@ -41,7 +41,7 @@ class Format {
         $this->request  = $request;
 
         $this->setContent();
-        $this->setOutputFormat();
+        $this->setOutputFormat($request);
     }
 
     /**
@@ -53,7 +53,7 @@ class Format {
         if ($this->outputFormat === 'json') {
             $contents = json_decode($this->content);
         } elseif ($this->outputFormat === 'xml') {
-            $contents = $this->fromXML();
+            $contents = $this->content;
         } elseif ($this->outputFormat === 'serialized') {
             $contents = unserialize($this->content);
         } else {
@@ -90,10 +90,11 @@ class Format {
     }
 
     /**
+     * @param ResponseInterface $request
      * @return Format
      */
-    private function setOutputFormat () {
-        $contentTypes   = $this->request->getHeader('Content-Type');
+    private function setOutputFormat ($request) {
+        $contentTypes   = $request->getHeader('Content-Type');
         $contentType    = '';
         $format         = 'json';
 
@@ -145,7 +146,13 @@ class Format {
      * @return mixed
      */
     public function toArray () {
-        return json_decode(json_encode($this->content), true);
+        if ($this->outputFormat === 'xml') {
+            $content = $this->fromXML();
+        } else {
+            $content = $this->content;
+        }
+
+        return json_decode(json_encode($content), true);
     }
 
 }
