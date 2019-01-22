@@ -3,6 +3,7 @@ namespace Moudarir\YMAClient;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Psr\Http\Message\ResponseInterface;
 
 class YMAClient {
 
@@ -42,6 +43,11 @@ class YMAClient {
     private $options;
 
     /**
+     * @var mixed|ResponseInterface
+     */
+    private $request;
+
+    /**
      * YMAClient constructor.
      *
      * @param string $username
@@ -64,43 +70,31 @@ class YMAClient {
      *
      * @param string $method GET | POST
      * @param string $uri
-     * @return mixed|\Psr\Http\Message\ResponseInterface
+     * @return mixed|ResponseInterface
+     * @throws GuzzleException
      */
     public function request ($method, $uri) {
-        $options = $this->setOptions();
-        try {
-            return $this->client->request($method, $uri, $options);
-        } catch (GuzzleException $exception) {
-            return null;
-        }
+        $options        = $this->setOptions();
+        $this->request  = $this->client->request($method, $uri, $options);
+
+        return $this;
     }
 
     /**
      * formatResponse()
      *
-     * @param mixed|\Psr\Http\Message\ResponseInterface $request
      * @return mixed|\stdClass
      */
-    public function getResponse ($request) {
-        try {
-            $format = new Format($request, $this->params);
-            return $format->getResponse();
-        } catch (\Exception $e) {
-            $response = [
-                'error'     => true,
-                'code'      => $e->getCode(),
-                'message'   => $e->getMessage()
-            ];
-
-            return (object)$response;
-        }
+    public function getResponse () {
+        $format = new Format($this->request, $this->params);
+        return $format->getResponse();
     }
 
     /**
      * @param string $format
      * @return YMAClient
      */
-    public function setFormat ($format = 'json') {
+    public function setFormat ($format = 'json'): YMAClient {
         $this->format = $format;
         return $this;
     }
@@ -116,8 +110,8 @@ class YMAClient {
      * @param array $params
      * @return YMAClient
      */
-    public function setParams (array $params) {
-        $this->params = $params;
+    public function setParams ($params): YMAClient {
+        $this->params = is_array($params) ? $params : [];
         return $this;
     }
 
@@ -140,7 +134,7 @@ class YMAClient {
             'auth'      => [$this->username, $this->password],
             'headers'   => [
                 'Accept'    => $acceptFormat,
-                'X-Api-Key' => $this->apiKey
+                'X-API-KEY' => $this->apiKey
             ]
         ];
         $this->options  = !empty($this->params) ? array_merge($default, $this->params) : $default;

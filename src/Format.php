@@ -1,7 +1,6 @@
 <?php
 namespace Moudarir\YMAClient;
 
-use Exception;
 use Laravie\Parser\Xml\Document;
 use Laravie\Parser\Xml\Reader;
 use Psr\Http\Message\ResponseInterface;
@@ -28,17 +27,12 @@ class Format {
     /**
      * Format constructor.
      *
-     * @param ResponseInterface|null $request
+     * @param ResponseInterface $request
      * @param array $params
-     * @throws Exception
      */
-    public function __construct ($request, array $params) {
-        if (is_null($request)) {
-            throw new Exception('No Content.', 204);
-        }
-
-        $this->params   = $params;
+    public function __construct (ResponseInterface $request, array $params) {
         $this->request  = $request;
+        $this->params   = $params;
 
         $this->setContent($request, $params);
         $this->setOutputFormat($request);
@@ -72,7 +66,7 @@ class Format {
         $requestBody = $request->getBody();
         if (isset($params['stream']) && $params['stream'] === true) {
             $content = '';
-            while (!$requestBody->eof() ) {
+            while (!$requestBody->eof()) {
                 $content .= $requestBody->read(1024);
             }
             $requestBody->close();
