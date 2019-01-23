@@ -43,6 +43,11 @@ class YMAClient {
     private $options;
 
     /**
+     * @var string
+     */
+    private $version = '';
+
+    /**
      * @var mixed|ResponseInterface
      */
     private $request;
@@ -75,6 +80,8 @@ class YMAClient {
      */
     public function request ($method, $uri) {
         $options        = $this->setOptions();
+        $version        = $this->getVersion();
+        $uri            = $version.'/'.$uri;
         $this->request  = $this->client->request($method, $uri, $options);
 
         return $this;
@@ -148,6 +155,43 @@ class YMAClient {
      */
     public function getOptions (): array {
         return $this->options;
+    }
+
+    /**
+     * @param string $version
+     * @return YMAClient
+     */
+    public function setVersion (string $version): YMAClient {
+        $this->version = $version;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersion (): string {
+        if ($this->version === '') {
+            $version = Statics::API_VERSION;
+        } else {
+            $length = strlen($this->version);
+            if ($length > 3) {
+                $version = Statics::API_VERSION;
+            } else {
+                $letter = Statics::getStringFromPosition($this->version);
+
+                if (strtolower($letter) === 'v') {
+                    $version = $this->version;
+                } else {
+                    if ($length === 3) {
+                        $version = Statics::API_VERSION;
+                    } else {
+                        $version = 'v'.$this->version;
+                    }
+                }
+            }
+        }
+
+        return $version;
     }
 
 }

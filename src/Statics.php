@@ -3,7 +3,7 @@ namespace Moudarir\YMAClient;
 
 class Statics {
 
-    const API_VERSION       = '1.1';
+    const API_VERSION       = 'v1';
     const BASE_URI_DEV      = 'http://api.server.yma';
     const BASE_URI_PROD     = 'https://api.profile-check.net';
     const TIMEZONE          = 'GMT';
@@ -39,5 +39,17 @@ class Statics {
             return strcmp($source, $string) === 0;
         else
             return strpos($source, $string) !== false;
+    }
+
+    /**
+     * getStringFromPosition()
+     *
+     * @param string $string
+     * @param integer $start
+     * @param integer $length
+     * @return boolean|string
+     */
+    public static function getStringFromPosition($string, $start = 0, $length = 1) {
+        return substr($string, $start, $length);
     }
 }
