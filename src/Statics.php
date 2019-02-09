@@ -4,8 +4,7 @@ namespace Moudarir\YMAClient;
 class Statics {
 
     const API_VERSION       = 'v1';
-    const BASE_URI_DEV      = 'http://api.server.yma';
-    const BASE_URI_PROD     = 'https://api.profile-check.net';
+    const ENDPOINT          = 'https://api.profile-check.net';
     const TIMEZONE          = 'GMT';
     const ALLOWED_METHODS   = ['get', 'delete', 'post', 'put', 'options', 'patch', 'head'];
     const DEFAULT_FORMAT    = 'json';
@@ -31,10 +30,10 @@ class Statics {
      *
      * @param string $source
      * @param string $string
-     * @param boolean $strict
-     * @return boolean
+     * @param bool $strict
+     * @return bool
      */
-    public static function checkString ($source, $string, $strict = false): bool {
+    public static function checkString (string $source, string $string, bool $strict = false): bool {
         if ($strict)
             return strcmp($source, $string) === 0;
         else
@@ -45,11 +44,11 @@ class Statics {
      * getStringFromPosition()
      *
      * @param string $string
-     * @param integer $start
-     * @param integer $length
-     * @return boolean|string
+     * @param int $start
+     * @param int $length
+     * @return string|bool
      */
-    public static function getStringFromPosition($string, $start = 0, $length = 1) {
+    public static function getCharsFromPosition (string $string, int $start = 0, int $length = 1):? string {
         return substr($string, $start, $length);
     }
 }

@@ -62,7 +62,7 @@ class Format {
      * @param array $params
      * @return Format
      */
-    private function setContent ($request, $params) {
+    private function setContent (ResponseInterface $request, array $params): Format {
         $requestBody = $request->getBody();
         if (isset($params['stream']) && $params['stream'] === true) {
             $content = '';
@@ -75,6 +75,7 @@ class Format {
         }
 
         $this->content = $content;
+
         return $this;
     }
 
@@ -89,7 +90,7 @@ class Format {
      * @param ResponseInterface $request
      * @return Format
      */
-    private function setOutputFormat ($request) {
+    private function setOutputFormat (ResponseInterface $request): Format {
         $contentTypes   = $request->getHeader('Content-Type');
         $contentType    = '';
         $format         = 'json';
@@ -118,6 +119,7 @@ class Format {
         }
 
         $this->outputFormat = $format;
+
         return $this;
     }
 

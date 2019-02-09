@@ -58,16 +58,13 @@ class YMAClient {
      * @param string $username
      * @param string $password
      * @param string $apiKey
-     * @param string $environment
+     * @param string|null $endpoint
      */
-    public function __construct ($username, $password, $apiKey, $environment = 'dev') {
+    public function __construct (string $username, string $password, string $apiKey, string $endpoint = null) {
         $this->username = $username;
         $this->password = $password;
         $this->apiKey   = $apiKey;
-
-        $this->client   = new Client([
-            'base_uri' => $environment === 'prod' ? Statics::BASE_URI_PROD : Statics::BASE_URI_DEV
-        ]);
+        $this->client   = new Client(['base_uri' => is_null($endpoint) ? Statics::ENDPOINT : $endpoint]);
     }
 
     /**
@@ -75,10 +72,10 @@ class YMAClient {
      *
      * @param string $method GET | POST
      * @param string $uri
-     * @return mixed|ResponseInterface
+     * @return YMAClient
      * @throws GuzzleException
      */
-    public function request ($method, $uri) {
+    public function request (string $method, string $uri): YMAClient {
         $options        = $this->setOptions();
         $version        = $this->getVersion();
         $uri            = $version.'/'.$uri;
@@ -101,7 +98,7 @@ class YMAClient {
      * @param string $format
      * @return YMAClient
      */
-    public function setFormat ($format = 'json'): YMAClient {
+    public function setFormat (string $format = 'json'): YMAClient {
         $this->format = $format;
         return $this;
     }
@@ -117,7 +114,7 @@ class YMAClient {
      * @param array $params
      * @return YMAClient
      */
-    public function setParams ($params): YMAClient {
+    public function setParams (array $params): YMAClient {
         $this->params = is_array($params) ? $params : [];
         return $this;
     }
@@ -140,6 +137,8 @@ class YMAClient {
         $default        = [
             'auth'      => [$this->username, $this->password],
             'headers'   => [
+                'Origin'    => $_SERVER['HTTP_HOST'],
+                'User-Agent'=> null,
                 'Accept'    => $acceptFormat,
                 'X-API-KEY' => $this->apiKey
             ]
@@ -177,7 +176,7 @@ class YMAClient {
             if ($length > 3) {
                 $version = Statics::API_VERSION;
             } else {
-                $letter = Statics::getStringFromPosition($this->version);
+                $letter = Statics::getCharsFromPosition($this->version);
 
                 if (strtolower($letter) === 'v') {
                     $version = $this->version;
