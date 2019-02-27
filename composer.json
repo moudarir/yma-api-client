@@ -26,7 +26,6 @@
   "require": {
     "php": ">=7.1.8",
     "guzzlehttp/guzzle": "^6.3",
-    "laravie/parser": "^2.0",
     "ext-bcmath": "*",
     "ext-json": "*"
   },
