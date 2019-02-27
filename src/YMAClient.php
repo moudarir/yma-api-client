@@ -33,24 +33,29 @@ class YMAClient {
     private $format;
 
     /**
+     * @var string
+     */
+    private $outputFormat;
+
+    /**
      * @var array
      */
     private $params = [];
 
     /**
-     * @var array
-     */
-    private $options;
-
-    /**
      * @var string
      */
-    private $version = '';
+    private $version = Statics::API_VERSION;
 
     /**
      * @var mixed|ResponseInterface
      */
     private $request;
+
+    /**
+     * @var string
+     */
+    private $content;
 
     /**
      * YMAClient constructor.
@@ -64,41 +69,58 @@ class YMAClient {
         $this->username = $username;
         $this->password = $password;
         $this->apiKey   = $apiKey;
-        $this->client   = new Client(['base_uri' => is_null($endpoint) ? Statics::ENDPOINT : $endpoint]);
+        $this->client   = new Client(['base_uri' => $endpoint ?: Statics::ENDPOINT]);
     }
 
     /**
-     * request()
-     *
      * @param string $method GET | POST
      * @param string $uri
-     * @return YMAClient
+     * @return self
      * @throws GuzzleException
      */
-    public function request (string $method, string $uri): YMAClient {
-        $options        = $this->setOptions();
-        $version        = $this->getVersion();
-        $uri            = $version.'/'.$uri;
-        $this->request  = $this->client->request($method, $uri, $options);
+    public function request (string $method, string $uri): self {
+        $uri            = $this->version.'/'.$uri;
+        $this->request  = $this->client->request($method, $uri, $this->params);
+        $this->setContent();
+        $this->setOutputFormat();
 
         return $this;
     }
 
     /**
-     * formatResponse()
-     *
+     * @return mixed|ResponseInterface
+     */
+    public function getRequest () {
+        return $this->request;
+    }
+
+    /**
      * @return mixed|\stdClass
      */
     public function getResponse () {
-        $format = new Format($this->request, $this->params);
-        return $format->getResponse();
+        switch ($this->outputFormat) {
+            case 'json':
+                $response = json_decode($this->content, true);
+                break;
+            case 'xml':
+                $response = $this->content;
+                break;
+            case 'serialized':
+                $response = unserialize($this->content);
+                break;
+            default:
+                $response = [];
+                break;
+        }
+
+        return $response;
     }
 
     /**
      * @param string $format
-     * @return YMAClient
+     * @return self
      */
-    public function setFormat (string $format = 'json'): YMAClient {
+    public function setFormat (string $format = 'json'): self {
         $this->format = $format;
         return $this;
     }
@@ -106,32 +128,58 @@ class YMAClient {
     /**
      * @return string
      */
-    public function getFormat () {
+    public function getFormat (): string {
         return $this->format;
     }
 
     /**
-     * @param array $params
-     * @return YMAClient
+     * @return self
      */
-    public function setParams (array $params): YMAClient {
-        $this->params = is_array($params) ? $params : [];
+    private function setOutputFormat (): self {
+        $contentTypes   = $this->request->getHeader('Content-Type');
+        $contentType    = '';
+        $format         = 'json';
+
+        if (!empty($contentTypes)) {
+            foreach ($contentTypes as $type) {
+                $arr = explode(';', $type);
+                $contentType = $arr[0];
+                break;
+            }
+
+            switch ($contentType) {
+                case 'application/xml':
+                case 'text/xml':
+                    $format = 'xml';
+                    break;
+                case 'application/vnd.php.serialized':
+                    $format = 'serialized';
+                    break;
+                case 'application/json':
+                case 'application/javascript':
+                default:
+                    $format = 'json';
+                    break;
+            }
+        }
+
+        $this->outputFormat = $format;
+
         return $this;
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getParams (): array {
-        return $this->params;
+    public function getOutputFormat (): string {
+        return $this->outputFormat;
     }
 
     /**
-     * setOptions()
-     *
-     * @return array
+     * @param array $params
+     * @return self
      */
-    private function setOptions (): array {
+    public function setParams (array $params = []): self {
         $formats        = Statics::FORMATS;
         $acceptFormat   = isset($formats[$this->format]) ? $formats[$this->format] : $formats[Statics::DEFAULT_FORMAT];
         $default        = [
@@ -143,25 +191,37 @@ class YMAClient {
                 'X-API-KEY' => $this->apiKey
             ]
         ];
-        $this->options  = !empty($this->params) ? array_merge($default, $this->params) : $default;
-        return $this->options;
+        $this->params   = !empty($params) ? array_merge($params, $default) : $default;
+        return $this;
     }
 
     /**
-     * getOptions()
-     *
      * @return array
      */
-    public function getOptions (): array {
-        return $this->options;
+    public function getParams (): array {
+        return $this->params;
     }
 
     /**
      * @param string $version
-     * @return YMAClient
+     * @return self
      */
-    public function setVersion (string $version): YMAClient {
-        $this->version = $version;
+    public function setVersion (string $version = null): self {
+        if (!is_null($version)) {
+            $length = strlen($version);
+            if ($length <= 3) {
+                $letter = Statics::getCharsFromPosition($version);
+
+                if (strtolower($letter) === 'v') {
+                    $this->version = $version;
+                } else {
+                    if ($length !== 3) {
+                        $this->version = 'v'.$version;
+                    }
+                }
+            }
+        }
+
         return $this;
     }
 
@@ -169,28 +229,34 @@ class YMAClient {
      * @return string
      */
     public function getVersion (): string {
-        if ($this->version === '') {
-            $version = Statics::API_VERSION;
-        } else {
-            $length = strlen($this->version);
-            if ($length > 3) {
-                $version = Statics::API_VERSION;
-            } else {
-                $letter = Statics::getCharsFromPosition($this->version);
+        return $this->version;
+    }
 
-                if (strtolower($letter) === 'v') {
-                    $version = $this->version;
-                } else {
-                    if ($length === 3) {
-                        $version = Statics::API_VERSION;
-                    } else {
-                        $version = 'v'.$this->version;
-                    }
-                }
+    /**
+     * @return string
+     */
+    public function getContent (): string {
+        return $this->content;
+    }
+
+    /**
+     * @return self
+     */
+    private function setContent (): self {
+        $requestBody = $this->request->getBody();
+        if (isset($this->params['stream']) && $this->params['stream'] === true) {
+            $content = '';
+            while (!$requestBody->eof()) {
+                $content .= $requestBody->read(1024);
             }
+            $requestBody->close();
+        } else {
+            $content = $requestBody->getContents();
         }
 
-        return $version;
+        $this->content = $content;
+
+        return $this;
     }
 
 }
