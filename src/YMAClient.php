@@ -95,7 +95,7 @@ class YMAClient {
     }
 
     /**
-     * @return mixed|\stdClass
+     * @return array|string
      */
     public function getResponse () {
         switch ($this->outputFormat) {
